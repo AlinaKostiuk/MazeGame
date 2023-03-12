@@ -1,0 +1,8 @@
+
+*** Instructions ***
+- Type <direction> <number of tiles> to move up, down, left or right.
+  For example, 'left 2' means you'll move two tiles to the left.
+  If you don't type a number, you'll move 1 tile.
+- Type 'map' to see the maze with your currect location.
+- Type 'help' to see the instructions again.
+- Type 'exit' to give up.
