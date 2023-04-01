@@ -2,15 +2,29 @@ import random
 import sys
 import re
 import params
+import codecs
 
 
 def main():
-    reset_skin()
+    global text_params
+
+    if len(sys.argv) > 1:
+        if '--rus' in sys.argv:
+            text_params = params.language['rus']
+        else:
+            text_params = params.language['eng']
+
+        if '-l' in sys.argv or '--line' in sys.argv:
+            reset_skin(line=True)
+        else:
+            reset_skin(line=False)
+
+    global navs
+    navs = text_params['movements']
+
     dimension = set_difficulty()
-    
-    print("\nIn your wanderings around this magical world you came across a maze.")
-    print("Find the way through it to continue your journey!")
-    print()
+
+    print(text_params['greeting'])
 
     # create the maze
     maze, entrance, finish = generate_maze(dimension)
@@ -22,23 +36,25 @@ def main():
     # show maze
     print(draw_map(maze))
 
-    print(get_instructions("instructions.txt"))
+    print(get_instructions(text_params['instructions']))
 
     while player != finish:
-        move = input("Where will you go next? ").strip().lower()
+        move = input(text_params['where_next']).strip().lower()
         
-        if move == "map":
+        if move == text_params["map"]:
             print()
             print(draw_map(maze))
             print()
             continue
-        elif move == "help":
-            print(get_instructions("instructions.txt"))
+        elif move == text_params["help"]:
+            print(get_instructions(text_params['instructions']))
             continue
-        elif move == "exit":
+        elif move == text_params["exit"]:
             exit()
         
-        matches = re.search(r"^(up|down|left|right)( [0-9]+)?$", move)
+        pattern = "^(" + f"{navs['up']}|{navs['down']}|{navs['left']}|{navs['right']}" + r")( [0-9]+)?$"
+
+        matches = re.search(pattern, move)
         if matches and matches.group(1):
             if matches.group(2):
                 steps = int(matches.group(2).strip())
@@ -55,12 +71,12 @@ def main():
 
 
 def set_difficulty():
-    diffs = list(params.dimensions.keys())
+    diffs = list(text_params['dimensions'].keys())
 
     while True:       
-        lvl = input(f"Choose difficulty ({', '.join(diffs)}): ").strip().lower()
+        lvl = input(f"{text_params['difficulty']} ({', '.join(diffs)}): ").strip().lower()
         if lvl in diffs:
-            return params.dimensions[lvl]
+            return text_params['dimensions'][lvl]
             
     
 
@@ -167,11 +183,12 @@ def create_finish(maze, dimension):
 
 def walk(maze, player, direction, steps, entrance, finish):
     directions = {"up": (-1,0), "down":(1,0), "left":(0,-1), "right":(0,1)}
-    xx, yy = directions[direction]
+    dir_key = list(navs.keys())[list(navs.values()).index(direction)]
+    xx, yy = directions[dir_key]
 
     counter = 0
 
-    if player == entrance and direction == "up":
+    if player == entrance and dir_key == "up":
         exit()
         return player
 
@@ -191,12 +208,12 @@ def walk(maze, player, direction, steps, entrance, finish):
         counter = i+1
 
     if counter == 0:
-        print("You can't go there!")
+        print(text_params['wall'])
         return player
     elif counter != steps:
-        print("You can't go that far!")
+        print(text_params['too_far'])
 
-    print(f"You've walked {counter} {direction}")
+    print(f"{text_params['too_far_walked']} {counter} {direction}")
 
     return player
 
@@ -211,28 +228,32 @@ def get_instructions(file):
     txt = ""
 
     try:
-        with open(file) as instructions:
+        with codecs.open(file, "r", "utf-8") as instructions:
             for line in instructions:
                 txt += line
     except FileNotFoundError:
-        txt = "\nInstructions are not found\n"
+        txt = text_params['FileNotFoundError']
 
     return txt
 
 
 def exit():
-    response = input("Are you sure you want to go back? (y/n) ")
-    if response.lower() in ["yes", "y", "1", "true"]:
-        print("Umm... okay... bye...")
+    response = input(text_params['go_back'])
+    if response.lower() in ["yes", "y", "1", "true", "да", "д"]:
+        print(text_params['bye'])
         sys.exit()
     else:
-        print("I'm glad you've changed your mind!")
+        print(text_params['changed_mind'])
         return
 
 
 
-def reset_skin():
-    skin = params.skin
+def reset_skin(line=False):
+    if line:
+        skin = params.line_skin
+    else:
+        skin = params.skin
+
     global u
     u = "⬛️" # undefined
     global w
@@ -249,12 +270,10 @@ def reset_skin():
 
 
 def victory():
-    print("\n🎊🎉🎊 Congratulations! 🎊🎉🎊")
-    print("Your courage and intelligence have guided you through this maze to new adventures!")
-    print()
+    print(text_params['congrats'])
 
-    repeat = input("Do you want to play again? (y/n) ")
-    if repeat.lower() in ["yes", "y", "1", "true"]:
+    repeat = input(text_params['replay'])
+    if repeat.lower() in ["yes", "y", "1", "true", "да", "д"]:
         reset_skin()
         main()
 
